@@ -29,6 +29,7 @@ public class ImpressionistView extends View {
     private Bitmap _offScreenBitmap = null;
     private Paint _paint = new Paint();
 
+    private float oldX, oldY, startTime;
     private int _alpha = 150;
     private int _defaultRadius = 25;
     private Point _lastPoint = null;
@@ -136,11 +137,103 @@ public class ImpressionistView extends View {
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent){
 
-        //TODO
-        //Basically, the way this works is to liste for Touch Down and Touch Move events and determine where those
-        //touch locations correspond to the bitmap in the ImageView. You can then grab info about the bitmap--like the pixel color--
-        //at that location
+        float curTouchX = motionEvent.getX();
+        float curTouchY = motionEvent.getY();
+        int curTouchXRounded = (int) curTouchX;
+        int curTouchYRounded = (int) curTouchY;
+        switch(motionEvent.getAction()){
+            case MotionEvent.ACTION_DOWN:
+                // Track old coordinates and start timer
+                oldX = motionEvent.getX();
+                oldY = motionEvent.getY();
+                startTime = motionEvent.getEventTime();
+            case MotionEvent.ACTION_MOVE:
+                // Compute distance and velocity of finger swipe
+                double distance = Math.sqrt(((curTouchX-oldX) * (curTouchX-oldX)) + ((curTouchY-oldY) * (curTouchY-oldY)));
+                float endTime = motionEvent.getEventTime();
+                float velocity =(float) distance / (endTime - startTime);
 
+                // Velocity usually doesn't exceed 6, so normalize brush radius between 5 and 95 (subject to change)
+                float radius = ((95 / 6) * velocity) + _minBrushRadius;
+                int historySize = motionEvent.getHistorySize();
+
+                for (int i = 0; i < historySize; i++) {
+
+                    float touchX = motionEvent.getHistoricalX(i);
+                    float touchY = motionEvent.getHistoricalY(i);
+
+                    try {
+                        // Get color from point in image
+                        Bitmap imageViewBitmap = _imageView.getDrawingCache();
+                        int color = imageViewBitmap.getPixel((int) touchX, (int) touchY);
+                        _paint.setColor(color);
+                        _paint.setAlpha(_alpha);
+                    }
+                    catch (Exception e) {
+                        Log.d("", "onTouchEvent: " + e.getMessage());
+                        return false;
+                    }
+                    if (_brushType == BrushType.Square) {
+                        // draw square with side widths equal to radius
+                        _offScreenCanvas.drawRect(touchX, touchY, touchX + radius, touchY + radius, _paint);
+                    }
+                    else if(_brushType == BrushType.Circle) {
+                        // draw circle
+                        _offScreenCanvas.drawCircle(touchX, touchY, radius, _paint);
+                    }
+                    else if(_brushType == BrushType.CircleSplatter) {
+                        // draw 5 circles randomly distributed around point
+                        for (int j = 0; j < 5; j++) {
+                            // generate pos/neg X and Y factors
+                            float factorX = (float) Math.random();
+                            factorX *= (Math.random() > .5) ? 1 : -1;
+                            float factorY = (float) Math.random();
+                            factorY *= (Math.random() > .5) ? 1 : -1;
+
+                            // shift by portion of radius
+                            _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
+                        }
+                    }
+                    else {
+                        _offScreenCanvas.drawPoint(touchX, touchY, _paint);
+                    }
+                }
+                try {
+                    Bitmap imageViewBitmap = _imageView.getDrawingCache();
+                    int color = imageViewBitmap.getPixel(curTouchXRounded, curTouchYRounded);
+                    _paint.setColor(color);
+                    _paint.setAlpha(_alpha);
+                }
+                catch (Exception e) {
+                    Log.d("", "onTouchEvent: " + e.getMessage());
+                    return false;
+                }
+                if (_brushType == BrushType.Square) {
+                    _offScreenCanvas.drawRect(curTouchX, curTouchY, curTouchX + radius, curTouchY + radius, _paint);
+                }
+                else if(_brushType == BrushType.Circle) {
+                    _offScreenCanvas.drawCircle(curTouchX, curTouchY, radius, _paint);
+                }
+                else if(_brushType == BrushType.CircleSplatter){
+                    for (int j = 0; j < 5; j++) {
+                        float factorX = (float) Math.random();
+                        factorX *= (Math.random() > .5) ? 1 : -1;
+                        float factorY = (float) Math.random();
+                        factorY *= (Math.random() > .5) ? 1 : -1;
+                        _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
+                    }
+                }
+                else {
+                    _offScreenCanvas.drawPoint(curTouchX, curTouchY, _paint);
+                }
+                oldX = curTouchX;
+                oldY = curTouchY;
+                startTime = motionEvent.getEventTime();
+                invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+        }
 
         return true;
     }
