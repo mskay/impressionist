@@ -99,9 +99,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     private void handleDrawingIconTouched(int itemId) {
         switch (itemId) {
             case R.id.action_download:
-                //CustomView.eraseAll();
                 onButtonClickDownloadImages(_impressionistView);
-                System.out.println("HI");
                 break;
             case R.id.action_upload:
                 onButtonClickLoadImage(_impressionistView);
@@ -119,9 +117,8 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     public void onButtonClickSave(View v) {
-        _impressionistView.setDrawingCacheEnabled(true);
-        Bitmap bit = _impressionistView.getDrawingCache();
-        MediaStore.Images.Media.insertImage(getContentResolver(), bit, "title" , "description");
+        Toast.makeText(this, "Painting added to gallery", Toast.LENGTH_SHORT).show();
+        _impressionistView.saveImpressionist(v.getContext());
     }
 
     public boolean onMenuItemClick(MenuItem item) {
@@ -135,16 +132,12 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
                 _impressionistView.setBrushType(BrushType.Square);
                 return true;
             case R.id.menuLine:
-                Toast.makeText(this, "Line Brush", Toast.LENGTH_SHORT).show();
-                _impressionistView.setBrushType(BrushType.Line);
+                Toast.makeText(this, "Black and White Brush", Toast.LENGTH_SHORT).show();
+                _impressionistView.setBrushType(BrushType.BlackWhite);
                 return true;
             case R.id.menuCircleSplatter:
                 Toast.makeText(this, "Circle Splatter Brush", Toast.LENGTH_SHORT).show();
                 _impressionistView.setBrushType(BrushType.CircleSplatter);
-                return true;
-            case R.id.menuLineSplatter:
-                Toast.makeText(this, "Line Splatter Brush", Toast.LENGTH_SHORT).show();
-                _impressionistView.setBrushType(BrushType.LineSplatter);
                 return true;
         }
         return false;

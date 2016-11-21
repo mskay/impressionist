@@ -9,13 +9,11 @@
         android:title="Square" />
 
     <item android:id="@+id/menuLine"
-        android:title="Line" />
+        android:title="BlackWhite" />
 
     <item android:id="@+id/menuCircleSplatter"
         android:title="Circle Splatter" />
 
-    <item android:id="@+id/menuLineSplatter"
-        android:title="Line Splatter" />
 
 
 

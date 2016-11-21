@@ -9,11 +9,13 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.text.MessageFormat;
 import java.util.Random;
@@ -28,6 +30,7 @@ public class ImpressionistView extends View {
     private Canvas _offScreenCanvas = null;
     private Bitmap _offScreenBitmap = null;
     private Paint _paint = new Paint();
+    private Paint _imagePaint = new Paint();
 
     private float oldX, oldY, startTime;
     private int _alpha = 150;
@@ -81,6 +84,9 @@ public class ImpressionistView extends View {
         //_paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
     }
 
+    public void saveImpressionist(Context context) {
+        MediaStore.Images.Media.insertImage(context.getContentResolver(), _offScreenBitmap, "Title", "Description");
+    }
     @Override
     protected void onSizeChanged (int w, int h, int oldw, int oldh){
 
@@ -112,7 +118,6 @@ public class ImpressionistView extends View {
      * Clears the painting
      */
     public void clearPainting(){
-        //TODO
         if(_offScreenCanvas != null) {
             Paint paint = new Paint();
             paint.setColor(Color.WHITE);
@@ -136,11 +141,8 @@ public class ImpressionistView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent){
-
         float curTouchX = motionEvent.getX();
         float curTouchY = motionEvent.getY();
-        int curTouchXRounded = (int) curTouchX;
-        int curTouchYRounded = (int) curTouchY;
         switch(motionEvent.getAction()){
             case MotionEvent.ACTION_DOWN:
                 // Track old coordinates and start timer
@@ -151,10 +153,9 @@ public class ImpressionistView extends View {
                 // Compute distance and velocity of finger swipe
                 double distance = Math.sqrt(((curTouchX-oldX) * (curTouchX-oldX)) + ((curTouchY-oldY) * (curTouchY-oldY)));
                 float endTime = motionEvent.getEventTime();
-                float velocity =(float) distance / (endTime - startTime);
 
                 // Velocity usually doesn't exceed 6, so normalize brush radius between 5 and 95 (subject to change)
-                float radius = ((95 / 6) * velocity) + _minBrushRadius;
+                float radius = calculateBrushSizeFromVelocity(distance, endTime, startTime);
                 int historySize = motionEvent.getHistorySize();
 
                 for (int i = 0; i < historySize; i++) {
@@ -162,23 +163,16 @@ public class ImpressionistView extends View {
                     float touchX = motionEvent.getHistoricalX(i);
                     float touchY = motionEvent.getHistoricalY(i);
 
-                    try {
-                        // Get color from point in image
-                        Bitmap imageViewBitmap = _imageView.getDrawingCache();
-                        int color = imageViewBitmap.getPixel((int) touchX, (int) touchY);
-                        _paint.setColor(color);
-                        _paint.setAlpha(_alpha);
-                    }
-                    catch (Exception e) {
-                        Log.d("", "onTouchEvent: " + e.getMessage());
-                        return false;
-                    }
+                    // Get color from point in image
+                    Bitmap imageViewBitmap = _imageView.getDrawingCache();
+                    int pixelColor = imageViewBitmap.getPixel((int) touchX, (int) touchY);
+                    _paint.setColor(pixelColor);
+                    _paint.setAlpha(_alpha);
+
                     if (_brushType == BrushType.Square) {
-                        // draw square with side widths equal to radius
                         _offScreenCanvas.drawRect(touchX, touchY, touchX + radius, touchY + radius, _paint);
                     }
                     else if(_brushType == BrushType.Circle) {
-                        // draw circle
                         _offScreenCanvas.drawCircle(touchX, touchY, radius, _paint);
                     }
                     else if(_brushType == BrushType.CircleSplatter) {
@@ -193,21 +187,23 @@ public class ImpressionistView extends View {
                             // shift by portion of radius
                             _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
                         }
+                    } else if(_brushType == BrushType.BlackWhite) {
+                        int red = Color.red(pixelColor);
+                        int green = Color.green(pixelColor);
+                        int blue = Color.blue(pixelColor);
+                        int absColor = (int)(red*0.2126) + (int)(green*0.7152) + (int)(blue*0.0722);
+                        _paint.setARGB(_alpha,absColor,absColor,absColor);
+                        _offScreenCanvas.drawCircle(curTouchX, curTouchY, 50, _paint);
                     }
                     else {
                         _offScreenCanvas.drawPoint(touchX, touchY, _paint);
                     }
                 }
-                try {
-                    Bitmap imageViewBitmap = _imageView.getDrawingCache();
-                    int color = imageViewBitmap.getPixel(curTouchXRounded, curTouchYRounded);
-                    _paint.setColor(color);
-                    _paint.setAlpha(_alpha);
-                }
-                catch (Exception e) {
-                    Log.d("", "onTouchEvent: " + e.getMessage());
-                    return false;
-                }
+                Bitmap imageViewBitmap = _imageView.getDrawingCache();
+                int pixelColor = imageViewBitmap.getPixel((int)curTouchX, (int)curTouchY);
+                _paint.setColor(pixelColor);
+                _paint.setAlpha(_alpha);
+
                 if (_brushType == BrushType.Square) {
                     _offScreenCanvas.drawRect(curTouchX, curTouchY, curTouchX + radius, curTouchY + radius, _paint);
                 }
@@ -222,6 +218,14 @@ public class ImpressionistView extends View {
                         factorY *= (Math.random() > .5) ? 1 : -1;
                         _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
                     }
+                }
+                else if(_brushType == BrushType.BlackWhite) {
+                    int red = Color.red(pixelColor);
+                    int green = Color.green(pixelColor);
+                    int blue = Color.blue(pixelColor);
+                    int absColor = (int)(red*0.2126) + (int)(green*0.7152) + (int)(blue*0.0722);
+                    _paint.setARGB(_alpha,absColor,absColor,absColor);
+                    _offScreenCanvas.drawCircle(curTouchX, curTouchY, 20, _paint);
                 }
                 else {
                     _offScreenCanvas.drawPoint(curTouchX, curTouchY, _paint);
@@ -238,8 +242,11 @@ public class ImpressionistView extends View {
         return true;
     }
 
-
-
+    private float calculateBrushSizeFromVelocity(double distance, float endTime, float startTime) {
+        float velocity =(float) distance / (endTime - startTime);
+        float radius = (18 * velocity) + _minBrushRadius;
+        return radius;
+    }
 
     /**
      * This method is useful to determine the bitmap position within the Image View. It's not needed for anything else
