@@ -9,6 +9,9 @@ To run this app, download the source code and open it as a new project in Androi
 ## References:
 
 Downloaded Icons from: https://material.io/icons/
+
 Keyboard Input: https://developer.android.com/training/keyboard-input/index.html
+
 Save Functionality: http://stackoverflow.com/questions/20859584/how-to-save-image-in-android-gallery
+
 Checkbox: https://developer.android.com/guide/topics/ui/controls/checkbox.html
