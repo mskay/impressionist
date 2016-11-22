@@ -24,6 +24,12 @@
         app:showAsAction="always|withText" />
 
     <item
+        android:id="@+id/action_text"
+        android:title="@string/action_text"
+        android:icon="@drawable/ic_text"
+        app:showAsAction="always|withText" />
+
+    <item
         android:id="@+id/action_clear"
         android:title="@string/action_clear"
         android:icon="@drawable/ic_clear"
@@ -34,4 +40,11 @@
         android:title="@string/action_save"
         android:icon="@drawable/ic_save"
         app:showAsAction="always|withText" />
+
+        <item
+            android:id="@+id/action_check"
+            app:actionViewClass="android.widget.CheckBox"
+            android:checkable="true"
+            app:showAsAction="always"
+            android:title="@string/action_check"/>
 </menu>

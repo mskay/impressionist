@@ -8,9 +8,6 @@
     <item android:id="@+id/menuSquare"
         android:title="Square" />
 
-    <item android:id="@+id/menuLine"
-        android:title="BlackWhite" />
-
     <item android:id="@+id/menuCircleSplatter"
         android:title="Circle Splatter" />
 

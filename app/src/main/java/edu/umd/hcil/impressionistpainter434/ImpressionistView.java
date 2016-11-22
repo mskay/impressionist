@@ -14,11 +14,11 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import java.text.MessageFormat;
-import java.util.Random;
 
 /**
  * Created by jon on 3/20/2016.
@@ -26,18 +26,13 @@ import java.util.Random;
 public class ImpressionistView extends View {
 
     private ImageView _imageView;
-
+    private MainActivity _mainActivity;
     private Canvas _offScreenCanvas = null;
     private Bitmap _offScreenBitmap = null;
     private Paint _paint = new Paint();
-    private Paint _imagePaint = new Paint();
-
+    private boolean _dynamicBrushSize = false;
     private float oldX, oldY, startTime;
     private int _alpha = 150;
-    private int _defaultRadius = 25;
-    private Point _lastPoint = null;
-    private long _lastPointTime = -1;
-    private boolean _useMotionSpeedForBrushStrokeSize = true;
     private Paint _paintBorder = new Paint();
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
@@ -169,67 +164,49 @@ public class ImpressionistView extends View {
                     _paint.setColor(pixelColor);
                     _paint.setAlpha(_alpha);
 
-                    if (_brushType == BrushType.Square) {
-                        _offScreenCanvas.drawRect(touchX, touchY, touchX + radius, touchY + radius, _paint);
-                    }
-                    else if(_brushType == BrushType.Circle) {
-                        _offScreenCanvas.drawCircle(touchX, touchY, radius, _paint);
-                    }
-                    else if(_brushType == BrushType.CircleSplatter) {
-                        // draw 5 circles randomly distributed around point
-                        for (int j = 0; j < 5; j++) {
-                            // generate pos/neg X and Y factors
-                            float factorX = (float) Math.random();
-                            factorX *= (Math.random() > .5) ? 1 : -1;
-                            float factorY = (float) Math.random();
-                            factorY *= (Math.random() > .5) ? 1 : -1;
+                    if (_dynamicBrushSize) {
+                        if (_brushType == BrushType.Square) {
+                            _offScreenCanvas.drawRect(touchX, touchY, touchX + radius, touchY + radius, _paint);
+                        } else if (_brushType == BrushType.Circle) {
+                            _offScreenCanvas.drawCircle(touchX, touchY, radius, _paint);
+                        } else if (_brushType == BrushType.CircleSplatter) {
+                            // draw 5 circles randomly distributed around point
+                            for (int j = 0; j < 5; j++) {
+                                // generate pos/neg X and Y factors
+                                float factorX = (float) Math.random();
+                                factorX *= (Math.random() > .5) ? 1 : -1;
+                                float factorY = (float) Math.random();
+                                factorY *= (Math.random() > .5) ? 1 : -1;
 
-                            // shift by portion of radius
-                            _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
+                                // shift by portion of radius
+                                _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
+                            }
+                        } else {
+                            _offScreenCanvas.drawPoint(touchX, touchY, _paint);
                         }
-                    } else if(_brushType == BrushType.BlackWhite) {
-                        int red = Color.red(pixelColor);
-                        int green = Color.green(pixelColor);
-                        int blue = Color.blue(pixelColor);
-                        int absColor = (int)(red*0.2126) + (int)(green*0.7152) + (int)(blue*0.0722);
-                        _paint.setARGB(_alpha,absColor,absColor,absColor);
-                        _offScreenCanvas.drawCircle(curTouchX, curTouchY, 50, _paint);
-                    }
-                    else {
-                        _offScreenCanvas.drawPoint(touchX, touchY, _paint);
-                    }
-                }
-                Bitmap imageViewBitmap = _imageView.getDrawingCache();
-                int pixelColor = imageViewBitmap.getPixel((int)curTouchX, (int)curTouchY);
-                _paint.setColor(pixelColor);
-                _paint.setAlpha(_alpha);
+                    } else {
+                        if (_brushType == BrushType.Square) {
+                            _offScreenCanvas.drawRect(touchX, touchY, touchX + 30, touchY + 30, _paint);
+                        } else if (_brushType == BrushType.Circle) {
+                            _offScreenCanvas.drawCircle(touchX, touchY, 30, _paint);
+                        } else if (_brushType == BrushType.CircleSplatter) {
+                            // draw 5 circles randomly distributed around point
+                            for (int j = 0; j < 5; j++) {
+                                // generate pos/neg X and Y factors
+                                float factorX = (float) Math.random();
+                                factorX *= (Math.random() > .5) ? 1 : -1;
+                                float factorY = (float) Math.random();
+                                factorY *= (Math.random() > .5) ? 1 : -1;
 
-                if (_brushType == BrushType.Square) {
-                    _offScreenCanvas.drawRect(curTouchX, curTouchY, curTouchX + radius, curTouchY + radius, _paint);
-                }
-                else if(_brushType == BrushType.Circle) {
-                    _offScreenCanvas.drawCircle(curTouchX, curTouchY, radius, _paint);
-                }
-                else if(_brushType == BrushType.CircleSplatter){
-                    for (int j = 0; j < 5; j++) {
-                        float factorX = (float) Math.random();
-                        factorX *= (Math.random() > .5) ? 1 : -1;
-                        float factorY = (float) Math.random();
-                        factorY *= (Math.random() > .5) ? 1 : -1;
-                        _offScreenCanvas.drawCircle(curTouchX + (factorX * radius), curTouchY + (factorY * radius), radius, _paint);
+                                // shift by portion of radius
+                                _offScreenCanvas.drawCircle(curTouchX + (factorX * 30), curTouchY + (factorY * 30), 30, _paint);
+                            }
+                        } else {
+                            _offScreenCanvas.drawPoint(touchX, touchY, _paint);
+                        }
                     }
                 }
-                else if(_brushType == BrushType.BlackWhite) {
-                    int red = Color.red(pixelColor);
-                    int green = Color.green(pixelColor);
-                    int blue = Color.blue(pixelColor);
-                    int absColor = (int)(red*0.2126) + (int)(green*0.7152) + (int)(blue*0.0722);
-                    _paint.setARGB(_alpha,absColor,absColor,absColor);
-                    _offScreenCanvas.drawCircle(curTouchX, curTouchY, 20, _paint);
-                }
-                else {
-                    _offScreenCanvas.drawPoint(curTouchX, curTouchY, _paint);
-                }
+
                 oldX = curTouchX;
                 oldY = curTouchY;
                 startTime = motionEvent.getEventTime();
@@ -244,8 +221,29 @@ public class ImpressionistView extends View {
 
     private float calculateBrushSizeFromVelocity(double distance, float endTime, float startTime) {
         float velocity =(float) distance / (endTime - startTime);
-        float radius = (18 * velocity) + _minBrushRadius;
+        float radius = (20 * velocity) + _minBrushRadius;
         return radius;
+    }
+
+    public void paintText(String message) {
+        if (_offScreenCanvas != null) {
+            Paint paint = new Paint();
+            paint.setColor(Color.BLACK);
+            paint.setAntiAlias(true);
+            paint.setTextSize(100);
+            _offScreenCanvas.drawText(message, _offScreenCanvas.getWidth() / 2,_offScreenCanvas.getHeight() / 2, paint);
+        }
+        invalidate();
+    }
+
+    public void dynamicBrushSize(Boolean checked) {
+        System.out.println("HELLO");
+        if(checked) {
+            _dynamicBrushSize = true;
+
+        } else {
+            _dynamicBrushSize = false;
+        }
     }
 
     /**

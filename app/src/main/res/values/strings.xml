@@ -3,6 +3,8 @@
     <string name="action_brush">Brush</string>
     <string name="action_clear">Clear</string>
     <string name="action_load">Load Image</string>
-    <string name="action_download">Download</string>
+    <string name="action_download">Download Images</string>
     <string name="action_save">Save</string>
+    <string name="action_text">Text</string>
+    <string name="action_check">Dynamic Brush</string>
 </resources>

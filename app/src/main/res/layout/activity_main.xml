@@ -54,7 +54,7 @@
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
                 android:theme="@style/AppToolbar"
-                android:paddingRight="250dp"
+                android:paddingRight="140dp"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
         </LinearLayout>

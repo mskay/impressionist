@@ -7,6 +7,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
+import android.support.annotation.MainThread;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -17,6 +19,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.webkit.URLUtil;
 import android.widget.ActionMenuView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
@@ -32,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     private static int RESULT_LOAD_IMAGE = 1;
     private  ImpressionistView _impressionistView;
     private Toolbar Toolbar_bottom;
-
+    public boolean checked = false;
     // These images are downloaded and added to the Android Gallery when the 'Download Images' button is clicked.
     // This was super useful on the emulator where there are no images by default
     private static String[] IMAGE_URLS ={
@@ -54,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             "http://www.cs.umd.edu/class/spring2016/cmsc434/assignments/IA08-AndroidII/Images/PurpleFlowerPlusButterfly_PhotoByJonFroehlich(Medium).JPG",
             "http://www.cs.umd.edu/class/spring2016/cmsc434/assignments/IA08-AndroidII/Images/WhiteFlower_PhotoByJonFroehlich(Medium).JPG",
             "http://www.cs.umd.edu/class/spring2016/cmsc434/assignments/IA08-AndroidII/Images/YellowFlower_PhotoByJonFroehlich(Medium).JPG",
+            "http://www.marklillyphotography.com/wp-content/uploads/2015/01/DSC09499_mod_PS_Web_850x567.jpg",
     };
 
     @Override
@@ -63,6 +69,10 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
         Toolbar_bottom = (Toolbar)findViewById(R.id.toolbar_bottom);
         Toolbar_bottom.inflateMenu(R.menu.bottom_toolbar);
+
+        final CheckBox checkBox = (CheckBox) findViewById(R.id.action_check);
+        checkBox.setText("Dynamic Brush");
+
         Toolbar_bottom.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -71,9 +81,36 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             }
         });
 
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b){
+                    Toast.makeText(MainActivity.this, "checked",
+                            Toast.LENGTH_SHORT).show();
+                    _impressionistView.dynamicBrushSize(true);
+                }else{
+                    Toast.makeText(MainActivity.this, "unchecked",
+                            Toast.LENGTH_SHORT).show();
+                    _impressionistView.dynamicBrushSize(false);
+                }
+            }
+        });
+
         _impressionistView = (ImpressionistView)findViewById(R.id.viewImpressionist);
         ImageView imageView = (ImageView)findViewById(R.id.viewImage);
         _impressionistView.setImageView(imageView);
+
+        //onCheckboxClicked(findViewById(R.id.action_check));
+    }
+
+    public boolean checkboxIsChecked() {
+        System.out.println("CHECKBOXISCHECKED");
+        CheckBox check = (CheckBox) findViewById(R.id.action_check);
+        if (check.isChecked()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void onButtonClickClear(View v) {
@@ -96,6 +133,19 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         popupMenu.show();
     }
 
+    public void onButtonClickText(View v) {
+        final EditText textField = new EditText(this);
+        new AlertDialog.Builder(this)
+                .setTitle("Enter text:")
+                .setView(textField)
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        Toast.makeText(MainActivity.this, "Text added", Toast.LENGTH_SHORT).show();
+                        _impressionistView.paintText(textField.getText().toString());
+                    }})
+                .setNegativeButton(android.R.string.no, null).show();
+    }
+
     private void handleDrawingIconTouched(int itemId) {
         switch (itemId) {
             case R.id.action_download:
@@ -107,11 +157,18 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             case R.id.action_brush:
                 onButtonClickSetBrush(_impressionistView);
                 break;
+            case R.id.action_text:
+                onButtonClickText(_impressionistView);
+                break;
             case R.id.action_clear:
                 onButtonClickClear(_impressionistView);
                 break;
             case R.id.action_save:
                 onButtonClickSave(_impressionistView);
+                break;
+            case R.id.action_check:
+                System.out.println("CHEKCED");
+                //itemId.setChecked(!itemId.isChecked());
                 break;
         }
     }
@@ -130,10 +187,6 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             case R.id.menuSquare:
                 Toast.makeText(this, "Square Brush", Toast.LENGTH_SHORT).show();
                 _impressionistView.setBrushType(BrushType.Square);
-                return true;
-            case R.id.menuLine:
-                Toast.makeText(this, "Black and White Brush", Toast.LENGTH_SHORT).show();
-                _impressionistView.setBrushType(BrushType.BlackWhite);
                 return true;
             case R.id.menuCircleSplatter:
                 Toast.makeText(this, "Circle Splatter Brush", Toast.LENGTH_SHORT).show();
